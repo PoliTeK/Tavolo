@@ -1,7 +1,10 @@
 #include <MozziGuts.h>
 #include <Oscil.h> // oscillator template
-#include <tables/sin4096_int8.h> // sine table for oscillator
+#include <tables/saw2048_int8.h>
+#include <tables/triangle_hermes_2048_int8.h>
 #include <tables/square_no_alias_2048_int8.h>
+#include <tables/envelop2048_uint8.h>
+
 
 #define AUDIO_RATE 32768 // Hz
 
@@ -16,14 +19,14 @@
 #define La1 La0*2
 
 
-Oscil <SIN4096_NUM_CELLS, AUDIO_RATE> Sin0(SIN4096_DATA);
-Oscil <SIN4096_NUM_CELLS, AUDIO_RATE> Sin1(SIN4096_DATA);
-Oscil <SIN4096_NUM_CELLS, AUDIO_RATE> Sin2(SIN4096_DATA);
-Oscil <SIN4096_NUM_CELLS, AUDIO_RATE> Sin3(SIN4096_DATA);
-Oscil <SIN4096_NUM_CELLS, AUDIO_RATE> Sin4(SIN4096_DATA);
+Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc0(TRIANGLE_HERMES_2048_DATA);
+Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc1(SAW2048_DATA);
+Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc2(SAW2048_DATA);
+Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc3(TRIANGLE_HERMES_2048_DATA);
+Oscil <ENVELOP2048_NUM_CELLS, AUDIO_RATE> Osc4(ENVELOP2048_DATA);
 
 // Array di oscillatori per poterci iterare sopra
-Oscil <4096, AUDIO_RATE> oscillatori[] = { Sin0, Sin1, Sin2, Sin3, Sin4 };
+Oscil <2048, AUDIO_RATE> oscillatori[] = { Osc0, Osc1, Osc2, Osc3, Osc4 };
 
 void setup() {
   startMozzi(CONTROL_RATE); // :)
@@ -65,16 +68,16 @@ void updateControl() {
     }
   }
 
-  Sin0.setFreq(frequenze_base[0]*4);
-  Sin1.setFreq(frequenze_base[1]*8);
-  Sin2.setFreq(frequenze_base[2]*16);
-  Sin3.setFreq(frequenze_base[3]*32);
-  Sin4.setFreq(frequenze_base[4]*64);
+  Osc0.setFreq(frequenze_base[0]*4);
+  Osc1.setFreq(frequenze_base[1]*8);
+  Osc2.setFreq(frequenze_base[2]*16);
+  Osc3.setFreq(frequenze_base[3]*32);
+  Osc4.setFreq(frequenze_base[4]*64);
 }
 
-//sin.next() restituisce un intero che sarà il return della funzione audio_output, perciò sommo sin.next() e scarto i 4 MSB di overflow dividendo per 16 per evitare il clipping
+//Osc.next() restituisce un intero che sarà il return della funzione audio_output, perciò sommo Osc.next() e scarto i n-oscilla MSB di overflow attraverso un bitshift (>>)
 AudioOutput_t updateAudio() {
-  int Sum = (Sin0.next() + Sin1.next() + Sin2.next() + Sin3.next() + Sin4.next())>>5;
+  int Sum = (Osc0.next() * 10 + Osc1.next() * 3 + Osc2.next() * 3 + Osc3.next() + Osc4.next())>>5;
   return MonoOutput::from8Bit(Sum);
 }
 
