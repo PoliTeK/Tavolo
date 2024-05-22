@@ -8,8 +8,10 @@
 #include <tables/square_no_alias_2048_int8.h>
 #include <tables/envelop2048_uint8.h>
 #include <tables/sin2048_int8.h> 
+#include <IntMap.h>
 
-#define AUDIO_RATE 32768 // Hz
+#define AUDIO_RATE 44100  // Hz    // Se si utilizza STM32
+// #define AUDIO_RATE 16384 // Hz  Se si utilizza Arduino
 
 // Definizione note associate a frequenze
 #define La0 27.5
@@ -20,6 +22,10 @@
 #define Fa1 43.65
 #define Sol1 49
 #define La1 La0*2
+
+// definizione oggetto per mappare in modo corretto (non si può usare map())
+const IntMap NOTE_map(0,1023,0,7); // Per selezionare le note
+const IntMap MOD_map(0,1023,0,50); // Per la frequenza di modulazione
 
 
 Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc0(TRIANGLE_HERMES_2048_DATA);
@@ -43,7 +49,8 @@ void updateControl() {
   float frequenze_base[5];
   // Discretizzazione delle frequenze iterate per ogni oscillatore 
   for (int i = 0; i < 5; i++) {
-    valori_discreti[i] = map(letture[i], 0, 1023, 0, 7);
+    // valori_discreti[i] = map(letture[i], 0, 1023, 0, 7);   La funzione map non si può usare perchè è troppo lenta
+    valori_discreti[i] = NOTE_map(letture[i]);
     switch(valori_discreti[i]) {
       case 0:
         frequenze_base[i] = La0;
@@ -79,7 +86,8 @@ void updateControl() {
   Osc4.setFreq(frequenze_base[4]*64);
 
 
-  float Carrier2_Freq = map(mozziAnalogRead(A5), 0, 1023, 0, 50 );// leggo il potenziometro per determinare la frequenza aggiuntiva
+  // float Carrier2_Freq = map(mozziAnalogRead(A5), 0, 1023, 0, 50 );// leggo il potenziometro per determinare la frequenza aggiuntiva
+  float Carrier2_Freq = MOD_map(mozziAnalogRead(A5));
   Carrier1.setFreq(frequenze_base[2]*8+Carrier2_Freq/8); // portante1: è un'ottava sotto il segnale modulato + la frequenza letta dal potenziometro(divido per 8 per avere più precisione)
   Carrier2.setFreq(frequenze_base[2]*16+Carrier2_Freq/10); // portante2: è alla stessa ottava del segnale modulato + la frequenza letta dal potenziometro(divido per 10 per avere una precisione diversa dall'altra portante)
 
