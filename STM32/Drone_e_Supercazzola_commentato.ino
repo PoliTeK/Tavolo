@@ -25,7 +25,7 @@
 #define POT1_PIN A1
 #define POT2_PIN A2 
 #define POT3_PIN A3
-#define POT4_PIN A4 
+#define DEPTH4_PIN A4 
 #define POT5_PIN A5
 #define P0_PIN 4      // Pulsante per attivare o disattivare la modulazione
 #define LEDM_PIN 5    // Led per visualizzare la freq di modulazione
@@ -45,12 +45,10 @@
 const IntMap GEN_map(0,4090,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
 const IntMap MOD_map(0,45,0,50);
-const IntMap WAT_map(400,450,0,50);
+
 
 //--------------------------------------------Pulsante-------------------------------------------------
 bool Switch_RM=false;
-
-
 unsigned long debounceDelay = 50; // Ritardo di debounce in millisecondi
 bool buttonState = false; // Variabile booleana da invertire
 bool lastButtonState = false; // Stato precedente del pulsante
@@ -64,7 +62,7 @@ Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc2(SAW2048_DATA); // oscillatore medio b
 Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc3(TRIANGLE_HERMES_2048_DATA); // oscillatore medio alto
 Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc4(SAW2048_DATA);// SUPERCAZZOLA
 // Array di oscillatori di voci per poterci iterare sopra
-Oscil <2048, AUDIO_RATE> oscillatori[] = { Osc0, Osc1, Osc2, Osc3, Osc4 };
+Oscil <2048, AUDIO_RATE> oscillatori[] = { Osc0, Osc1, Osc2, Osc3};
 
 //--------------------------------------------Oscillatori Modulazioni-------------------------------------------
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> Carrier2(SIN2048_DATA); // portante per Ring Modulatin(RM)  Osc1 
@@ -75,7 +73,7 @@ Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> Carrier1(SIN2048_DATA);
 //--------------------------------------------Supercazzola------------------------------------------------------
 ADSR <AUDIO_RATE, AUDIO_RATE> envelope;
 EventDelay noteDelay;
-
+unsigned int duration, attack, decay, sustain, release_ms;
 
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -84,15 +82,12 @@ void setup() {
   pinMode(P0_PIN,INPUT);
   pinMode(LEDM_PIN,OUTPUT);
   startMozzi(CONTROL_RATE); // :)
+  
 }
 
-unsigned int duration, attack, decay, sustain, release_ms;
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+void updateControl() { 
 
-void updateControl() {
-  
-  
-
-  
 //--------------------------------------------Debouncing--------------------------------------------------------
   int reading = digitalRead(P0_PIN); // Legge lo stato attuale del pulsante
   // If the switch changed, due to noise or pressing:
@@ -116,13 +111,14 @@ void updateControl() {
   // save the reading. Next time through the loop, it'll be the lastButtonState:
   lastButtonState = reading;
   // Pippone finito ;)
+
 //----------------------------------------Note Voci----------------------------------------------------------- 
   // Vettore con tutti i valori letti dai potenziometri
-  int letture[5] = { GEN_map(mozziAnalogRead(POT0_PIN)), GEN_map(mozziAnalogRead(POT1_PIN)), GEN_map(mozziAnalogRead(POT2_PIN)), GEN_map(mozziAnalogRead(POT3_PIN)), GEN_map(mozziAnalogRead(POT4_PIN))};
-  int valori_discreti[5];    // Variabili per il calcolo delle note e della frequenza dei vari oscillatori
-  float frequenze_base[5];
+  int letture[4] = { GEN_map(mozziAnalogRead(POT0_PIN)), GEN_map(mozziAnalogRead(POT1_PIN)), GEN_map(mozziAnalogRead(POT2_PIN)), GEN_map(mozziAnalogRead(POT3_PIN))};
+  int valori_discreti[4];    // Variabili per il calcolo delle note e della frequenza dei vari oscillatori
+  float frequenze_base[4];
   // Discretizzazione delle frequenze iterate per ogni oscillatore 
-  for (int i = 0; i < 5; i++) 
+  for (int i = 0; i < 4; i++) 
   {
     valori_discreti[i] = NOTE_map(letture[i]);
     switch(valori_discreti[i]) {
@@ -152,7 +148,7 @@ void updateControl() {
         break;
     }
   }
-// setto le frequenze in base alle eltture
+// setto le frequenze in base alle letture
   Osc0.setFreq(frequenze_base[0]*2);
   Osc1.setFreq(frequenze_base[1]*4);
   Osc2.setFreq(frequenze_base[2]*8);  
@@ -168,22 +164,22 @@ void updateControl() {
 
                            frequenze_base[0]*12, frequenze_base[1]*12, frequenze_base[2]*12, frequenze_base[3]*12};
  
-  // se è passato il temo settato con noteDelay.start
+  // se è passato il temo settato con noteDelay.start setta ADSR
   if(noteDelay.ready()){
-      // valori massimi dell'envelope                                            // .attack levek |      ^
-      byte attack_level =rand(50) + 50;                                          //               |     / \                          
-      byte decay_level = 20;                                                     //  decay level  |    /   \________                      
-      envelope.setADLevels(attack_level,decay_level);                            //               |   /             \                      
-      attack = 5;  // At                                                         //               |  /               \    
-      decay = 50;  // Dt                                                         //               + --------------------
-      sustain = 50;// St                                                         //             0       ^  ^       ^  ^
-      release_ms = rand(100) +300;; // Rt                                        //                     |  |       |  |
-      envelope.setTimes(attack,decay,sustain,release_ms);                        //                     At Dt     St  Rt
+      // valori massimi dell'envelope                                            // .attack levek |      ^              //
+      byte attack_level =rand(50) + 50;                                          //               |     / \             //             
+      byte decay_level = 20;                                                     //  decay level  |    /   \________    //                  
+      envelope.setADLevels(attack_level,decay_level);                            //               |   /             \   //                   
+      attack = 5;  // At                                                         //               |  /               \  //  
+      decay = 50;  // Dt                                                         //               + --------------------//
+      sustain = 50;// St                                                         //             0       ^  ^       ^  ^ //
+      release_ms = rand(100) +300; // Rt                                        //                     |  |       |  |  //
+      envelope.setTimes(attack,decay,sustain,release_ms);                        //                     At Dt     St  Rt//
       envelope.noteOn();
       int j = rand(15);
       Osc4.setFreq(Note_Pianta[j]); 
       // tempo tra una nota e l'altra deciso dal sensore di profondità con l'aiuto di rand
-      int pianta = (mozziAnalogRead(A4)/(3+rand(5)))*rand(6);
+      int pianta = (mozziAnalogRead(DEPTH4_PIN)/(3+rand(5)))*rand(6);
       noteDelay.start(attack+decay+sustain+pianta); // setto la prox attesa
   }
 //-------------------------------------------------------RM-------------------------------------------------------------------------
