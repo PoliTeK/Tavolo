@@ -4,6 +4,9 @@ Per ogni oscillatore è previsto un potenziometro per variare la nota nella scal
 di LA minore e un potenziometro per variare il cutoff del filtro.
 La resonance di entrambi i filtri è costante con un valore calibrato ad orecchio.
 
+TODO:
+Distorsione su Osc1
+
 */
 
 
@@ -60,6 +63,8 @@ const IntMap CUTOFF_map(20,4096,500,50000);
 //--------------------------------------------Oscillatori Voci-------------------------------------------
 Oscil <SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> Osc0(SQUARE_NO_ALIAS_2048_DATA); // oscillatore SubBass
 Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc1(SAW2048_DATA); // Oscillatore  basso
+// Array di oscillatori di voci per poterci iterare sopra
+Oscil <2048, AUDIO_RATE> oscillatori[] = {Osc0, Osc1};
 int Sum = 0;
 
 
@@ -91,10 +96,11 @@ void updateControl() {
   {
     valori_discreti[i] = NOTE_map(letture[i]);
     frequenze_base[i] = note[valori_discreti[i]];
+    oscillatori[i].setFreq(frequenze_base[i]*(2*(i+1)));// setto le frequenze in base alle letture
   }
-// setto le frequenze in base alle letture
+/* setto le frequenze in base alle letture
   Osc0.setFreq(frequenze_base[0]*2);
-  Osc1.setFreq(frequenze_base[1]*4);
+  Osc1.setFreq(frequenze_base[1]*4);*/
 
 //------------------------------------------------------------------------Filtri------------------------------------------------
   cutoff1 = CUTOFF_map(mozziAnalogRead(POT2_PIN));
