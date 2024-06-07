@@ -3,6 +3,7 @@ Questo codice implementa i primi due oscillatori Sub Bass e Bass
 Per ogni oscillatore è previsto un potenziometro per variare la nota nella scala 
 di LA minore e un potenziometro per variare il cutoff del filtro.
 La resonance di entrambi i filtri è costante con un valore calibrato ad orecchio.
+
 */
 
 
@@ -44,6 +45,8 @@ La resonance di entrambi i filtri è costante con un valore calibrato ad orecchi
 #define Fa1 43.65
 #define Sol1 49
 #define La1 La0*2
+// vettore con le note della scala
+const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 
 
 // funzioni per il map
@@ -87,32 +90,7 @@ void updateControl() {
   for (int i = 0; i < 2; i++) 
   {
     valori_discreti[i] = NOTE_map(letture[i]);
-    switch(valori_discreti[i]) {
-      case 0:
-        frequenze_base[i] = La0;
-        break;
-      case 1:
-        frequenze_base[i] = Si0;
-        break;
-      case 2:
-        frequenze_base[i] = Do1;
-        break;
-      case 3:
-        frequenze_base[i] = Re1;
-        break;
-      case 4:
-        frequenze_base[i] = Mi1;
-        break;
-      case 5:
-        frequenze_base[i] = Fa1;
-        break;
-      case 6:
-        frequenze_base[i] = Sol1;
-        break;
-      case 7:
-        frequenze_base[i] = La1;
-        break;
-    }
+    frequenze_base[i] = note[valori_discreti[i]];
   }
 // setto le frequenze in base alle letture
   Osc0.setFreq(frequenze_base[0]*2);
