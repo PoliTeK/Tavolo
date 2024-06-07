@@ -1,4 +1,4 @@
-/*  CODICE OSC0 E OSC1 STM32
+/*  CODICE OSC2 E OSC3 STM32
 Questo codice implementa i primi due oscillatori medio basso e medio alto
 Per ogni oscillatore è previsto un potenziometro per variare la nota nella scala 
 di LA minore e un potenziometro per variare il cutoff del filtro.
@@ -15,6 +15,7 @@ con un led pilotato in PWM che va a tempo con la modulazione.
 #include <Oscil.h>
 #include <tables/saw2048_int8.h> 
 #include <tables/triangle_hermes_2048_int8.h>
+#include <tables/square_no_alias_2048_int8.h>
 #include <tables/sin2048_int8.h> 
 // filtro
 #include <ResonantFilter.h>
@@ -58,7 +59,7 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 const IntMap GEN_map(0,4096,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
 const IntMap MOD_map(0,45,0,50);
-const IntMap CUTOFF_map(20,4096,500,50000);
+const IntMap CUTOFF_map(20,4096,500,40000);
 
 
 //--------------------------------------------Pulsante-------------------------------------------------
@@ -71,7 +72,8 @@ unsigned long lastDebounceTime = 0; // Tempo dell'ultimo cambiamento di stato de
 
 //--------------------------------------------Oscillatori Voci-------------------------------------------
 Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc2(SAW2048_DATA); // oscillatore medio basso
-Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc3(TRIANGLE_HERMES_2048_DATA); // oscillatore medio alto
+//Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc3(TRIANGLE_HERMES_2048_DATA); // oscillatore medio alto
+Oscil <SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> Osc3(SQUARE_NO_ALIAS_2048_DATA);
 int Sum = 0;
 
 // Array di oscillatori di voci per poterci iterare sopra
@@ -140,22 +142,21 @@ void updateControl() {
   {
     valori_discreti[i] = NOTE_map(letture[i]);
     frequenze_base[i] = note[valori_discreti[i]];
-    oscillatori[i].setFreq(frequenze_base[i]*(8*(i+1)));// setto le frequenze in base alle letture
   }
-/* setto le frequenze in base alle letture
-  Osc2.setFreq(frequenze_base[2]*8);  
-  Osc3.setFreq(frequenze_base[3]*16);*/
+// setto le frequenze in base alle letture
+  Osc2.setFreq(frequenze_base[0]*8);  
+  Osc3.setFreq(frequenze_base[1]*16);
 
 //-------------------------------------------------------RM-------------------------------------------------------------------------
   float Carrier2_Freq = MOD_map(GEN_map(mozziAnalogRead(POT4_PIN)));// leggo il potenziometro per determinare la frequenza aggiuntiva
-  Carrier1.setFreq(frequenze_base[3]*48+Carrier2_Freq/8); // portante1: è un'ottava sotto il segnale modulato + la frequenza letta dal potenziometro(divido per 8 per avere più precisione)
-  Carrier2.setFreq(frequenze_base[2]*24+Carrier2_Freq/10); // portante2: è alla stessa ottava del segnale modulato + la frequenza letta dal potenziometro(divido per 10 per avere una precisione diversa dall'altra portante)
-  //  modo simpatico per fare oscillare il led a tempo con la modulazione
+  Carrier1.setFreq(frequenze_base[1]*48+Carrier2_Freq/8); // portante1: è un'ottava sotto il segnale modulato + la frequenza letta dal potenziometro(divido per 8 per avere più precisione)
+  Carrier2.setFreq(frequenze_base[0]*24+Carrier2_Freq/10); // portante2: è alla stessa ottava del segnale modulato + la frequenza letta dal potenziometro(divido per 10 per avere una precisione diversa dall'altra portante)
+//  modo simpatico per fare oscillare il led a tempo con la modulazione
   if(Switch_RM==true){  
-    if(Carrier1.next()<0){
+    if(Carrier2.next()<0){
       analogWrite(LEDM_PIN,0);
     }
-    else analogWrite(LEDM_PIN,Carrier1.next());   
+    else analogWrite(LEDM_PIN,Carrier2.next());   
   }
   else analogWrite(LEDM_PIN,0);
 
@@ -175,11 +176,11 @@ void updateControl() {
 
 AudioOutput_t updateAudio() {
   if (Switch_RM==true){
-    Sum = ( ((Carrier2.next()>>9)*(lpf1.next(Osc2.next()))*2) + (((Carrier1.next()>>9))*(lpf2.next(Osc3.next())*4 )) )>>3;
+    Sum = ( ((lpf1.next((Carrier2.next()>>9)*Osc2.next()))*4) + ((lpf2.next(((Carrier1.next()>>9))*Osc3.next())*3 )) )>>5;
     // moltiplico il segnale per le 2 portanti divise (di molto) secondo il gusto per rendere la modulazione il giusto invasiva
   }
   else{
-    Sum = (lpf1.next(Osc2.next())*2 + lpf2.next(Osc3.next())*4 )>>3;
+    Sum = (lpf1.next(Osc2.next())*4 + lpf2.next(Osc3.next())*3 )>>5;
   }
   return MonoOutput::from8Bit(Sum);
 }
