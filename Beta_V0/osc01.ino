@@ -55,7 +55,7 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 // funzioni per il map
 const IntMap GEN_map(0,4096,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
-const IntMap CUTOFF_map(20,4096,500,50000);
+const IntMap CUTOFF_map(0,4096,50,50000);
 
  
 
@@ -78,7 +78,7 @@ int resonance=0;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   startMozzi(); // :)
   
 }
@@ -96,11 +96,10 @@ void updateControl() {
   {
     valori_discreti[i] = NOTE_map(letture[i]);
     frequenze_base[i] = note[valori_discreti[i]];
-    oscillatori[i].setFreq(frequenze_base[i]*(2*(i+1)));// setto le frequenze in base alle letture
   }
-/* setto le frequenze in base alle letture
+ //setto le frequenze in base alle letture
   Osc0.setFreq(frequenze_base[0]*2);
-  Osc1.setFreq(frequenze_base[1]*4);*/
+  Osc1.setFreq(frequenze_base[1]*4);
 
 //------------------------------------------------------------------------Filtri------------------------------------------------
   cutoff1 = CUTOFF_map(mozziAnalogRead(POT2_PIN));
@@ -108,7 +107,7 @@ void updateControl() {
   resonance = 200;
   lpf1.setCutoffFreqAndResonance(cutoff1, resonance);
   lpf2.setCutoffFreqAndResonance(cutoff2, resonance);
-  //Serial.println(cutoff1);
+  Serial.println(cutoff1);
   //Serial.println(cutoff2);
 
 
@@ -117,7 +116,7 @@ void updateControl() {
 
 
 AudioOutput_t updateAudio() {
-  Sum = (lpf1.next(Osc0.next())*2 + lpf2.next(Osc1.next())*4 )>>3;
+  Sum = ( (lpf1.next(Osc0.next())*3) + (lpf2.next(Osc1.next())*4) )>>5;
   return MonoOutput::from8Bit(Sum); // un po dubbia questa
 }
 
