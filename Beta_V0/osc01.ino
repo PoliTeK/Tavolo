@@ -4,8 +4,7 @@ Per ogni oscillatore è previsto un potenziometro per variare la nota nella scal
 di LA minore e un potenziometro per variare il cutoff del filtro.
 La resonance di entrambi i filtri è costante con un valore calibrato ad orecchio.
 
-TODO:
-Distorsione su Osc1
+Distorsione gain clip implementata sulla somma dei due oscillatori
 
 */
 
@@ -29,6 +28,7 @@ Distorsione su Osc1
 
 #define AUDIO_RATE 44100 // Hz   
 // #define AUDIO_RATE 16384 // Hz
+#define CONTROL_RATE 128 // Hz
 
 // Definiamo i pin a cui colleghiamo potenziometri 
 #define POT0_PIN A0 
@@ -37,6 +37,7 @@ Distorsione su Osc1
 #define POT3_PIN A3
 #define POT4_PIN A4 
 #define POT5_PIN A5
+#define LEDCLIP_PIN 5 // Led per visualizzare la quantità di distorsione
 
 
 // Definizione note associate a frequenze
@@ -55,7 +56,10 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 // funzioni per il map
 const IntMap GEN_map(0,4096,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
-const IntMap CUTOFF_map(0,4096,50,50000);
+const IntMap CUTOFF_map(0,4096,200,5000);
+const IntMap CLIP_map(0,4096,70,255);
+const IntMap LEDCLIP_map(50,255,255,0);
+const IntMap GAIN_map(70,255,65,20);
 
  
 
@@ -68,6 +72,7 @@ Oscil <2048, AUDIO_RATE> oscillatori[] = {Osc0, Osc1};
 int Sum = 0;
 
 
+
 //---------------------------------------Filtri-------------------------------------------------
 ResonantFilter<LOWPASS, uint16_t> lpf1; 
 ResonantFilter<LOWPASS, uint16_t> lpf2; 
@@ -75,11 +80,16 @@ int cutoff1 = 0;
 int cutoff2 = 0;
 int resonance=0;
 
+//---------------------------------------Distorsione-------------------------------------------------
+byte gain=255;
+int clip=255;
+
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
-  Serial.begin(9600);
-  startMozzi(); // :)
+  //Serial.begin(9600);
+  pinMode(LEDCLIP_PIN,OUTPUT);
+  startMozzi(CONTROL_RATE); // :)
   
 }
 
@@ -104,11 +114,16 @@ void updateControl() {
 //------------------------------------------------------------------------Filtri------------------------------------------------
   cutoff1 = CUTOFF_map(mozziAnalogRead(POT2_PIN));
   cutoff2 = CUTOFF_map(mozziAnalogRead(POT3_PIN));
-  resonance = 200;
+  resonance = 2000;
   lpf1.setCutoffFreqAndResonance(cutoff1, resonance);
   lpf2.setCutoffFreqAndResonance(cutoff2, resonance);
-  Serial.println(cutoff1);
+  //Serial.println(cutoff1);
   //Serial.println(cutoff2);
+
+//------------------------------------------------------------------------Distorsione------------------------------------------------
+  clip = CLIP_map(mozziAnalogRead(POT4_PIN));
+  analogWrite(LEDCLIP_PIN,LEDCLIP_map(clip)); // Da quello che ho capito analogWrite non si può usare
+  gain = GAIN_map(clip);
 
 
 }
@@ -116,8 +131,13 @@ void updateControl() {
 
 
 AudioOutput_t updateAudio() {
-  Sum = ( (lpf1.next(Osc0.next())*3) + (lpf2.next(Osc1.next())*4) )>>5;
-  return MonoOutput::from8Bit(Sum); // un po dubbia questa
+  Sum = ( (lpf1.next(Osc0.next())*4) + (lpf2.next(Osc1.next())*7) ); // somma i due osc con guadagni diversi
+  Sum = MonoOutput::fromAlmostNBit(13,Sum); // ricentro il segnale su 8 bit
+  // Gain e clip sono opposti, il potenziometro 4 controlla la soglia del Clip e più bassa è la soglia più il volume è alto 
+  if (Sum>clip-50) Sum=clip-50;
+  else if (Sum<(-clip)) Sum=-clip;
+  Sum = MonoOutput::from16Bit(Sum*gain).clip(); 
+  return MonoOutput::from8Bit(Sum); 
 }
 
 void loop() {
