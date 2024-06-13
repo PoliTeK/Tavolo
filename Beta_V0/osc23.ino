@@ -31,6 +31,7 @@ con un led pilotato in PWM che va a tempo con la modulazione.
 
 #define AUDIO_RATE 44100 // Hz   
 // #define AUDIO_RATE 16384 // Hz
+#define CONTROL_RATE 128 // Hz
 
 // Definiamo i pin a cui colleghiamo potenziometri 
 #define POT0_PIN A0 
@@ -182,7 +183,7 @@ AudioOutput_t updateAudio() {
   else{
     Sum = (lpf1.next(Osc2.next())*4 + lpf2.next(Osc3.next())*3 )>>5;
   }
-  return MonoOutput::from8Bit(Sum);
+  return MonoOutput::fromAlmostNBit(8,Sum);
 }
 
 void loop() {
