@@ -1,7 +1,8 @@
 /*  CODICE OSC4 Arduino
 Questo codice implementa l'oscillatore alto che arpeggia in modo randomico
 A4 collegato al sensore di livello dell'acqua (da ricalibrare il map).
-A5 per il momento è collegato ad un potenziometro per ON OFF
+I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 collegato nella pianta)
+
 
 */
 
@@ -22,6 +23,8 @@ A5 per il momento è collegato ad un potenziometro per ON OFF
 #include <ADSR.h>
 // libreria Random function
 #include <mozzi_rand.h>
+// Libreria sensori capacitivi (per usare la pianta come pulsante)
+#include <CapacitiveSensor.h>
 
 
 
@@ -35,8 +38,7 @@ A5 per il momento è collegato ad un potenziometro per ON OFF
 #define POT3_PIN A3
 #define POT4_PIN A4 
 #define POT5_PIN A5
-#define P0_PIN 4      
-#define LEDM_PIN 5    
+    
 
 // Definizione note associate a frequenze
 #define La0 27.5
@@ -53,11 +55,11 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 
 
 // funzioni per il map
-const IntMap GEN_map(0,4090,0,50);   // Per STM32 con potenziometri collegati a 3.3V
+const IntMap GEN_map(0,1023,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
 const IntMap MOD_map(0,45,0,50);
-const IntMap ON_map(0,4090,0,100);
-const IntMap SENS_map(0,4090,400,600);
+const IntMap ON_map(0,1023,0,100);
+const IntMap SENS_map(0,1023,400,600);
 
 
 
@@ -75,9 +77,17 @@ EventDelay noteDelay;
 unsigned int duration, attack, decay, sustain, release_ms;
 
 
+// create an instance of the library
+// pin 4 sends electrical energy
+// pin 2 senses senses a change
+CapacitiveSensor capSensor = CapacitiveSensor(4, 2);
+// threshold for turning the lamp on
+int threshold = 300; // Da calibrare, si potrebbe mettere un potenziometro per rendere la pianta più o meno sensibile
+
+
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   startMozzi(CONTROL_RATE); // :)
   
 }
@@ -112,8 +122,15 @@ void updateControl() {
  
   // se è passato il tempo settato con noteDelay.start setta ADSR
   if(noteDelay.ready()){
-      if(ON_map(mozziAnalogRead(POT5_PIN))<50) ON=0;
-      else ON=1;  // Controllo ON OFF con potenziometro
+      // store the value reported by the plant in a variable
+      long sensorValue = capSensor.capacitiveSensor(30);
+      //Serial.println(sensorValue);
+      // if the value is greater than the threshold
+      if (sensorValue > threshold) {
+        ON=1;
+      }
+      else ON=0;
+      
       // valori massimi dell'envelope                                            // .attack levek |      ^              //
       byte attack_level =rand(50) + 50;                                          //               |     / \             //             
       byte decay_level = 20;                                                     //  decay level  |    /   \________    //                  
@@ -131,6 +148,8 @@ void updateControl() {
       int pianta = (sens/(3+rand(5)))*rand(6);
       noteDelay.start(attack+decay+sustain+release_ms+pianta); // setto la prox attesa
   }
+
+  
 
   
 
