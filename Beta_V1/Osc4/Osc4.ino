@@ -38,6 +38,7 @@ I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 c
 #define POT3_PIN A3
 #define POT4_PIN A4 //depth
 #define POT5_PIN A5
+#define Display_PIN 5
     
 
 // Definizione note associate a frequenze
@@ -88,6 +89,7 @@ int threshold = 10; // Da calibrare, si potrebbe mettere un potenziometro per re
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
   Serial.begin(9600);
+  pinMode(Display_PIN,OUTPUT);
   startMozzi(CONTROL_RATE); // :)
   
 }
@@ -129,9 +131,12 @@ void updateControl() {
       // if the value is greater than the threshold
       if (sensorValue > threshold) {
         ON=1;
+        digitalWrite(Display_PIN,1);
       }
-      else ON=0;
-      
+      else {
+        ON=0;
+        digitalWrite(Display_PIN,0);
+      }
       // valori massimi dell'envelope                                            // .attack levek |      ^              //
       byte attack_level =rand(50) + 50;                                          //               |     / \             //             
       byte decay_level = 20;                                                     //  decay level  |    /   \________    //                  
