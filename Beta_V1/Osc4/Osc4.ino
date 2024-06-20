@@ -1,4 +1,4 @@
-/*  CODICE OSC4 Arduino
+/*  CODICE OSC4 STM32
 Questo codice implementa l'oscillatore alto che arpeggia in modo randomico
 A4 collegato al sensore di livello dell'acqua (da ricalibrare il map).
 I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 collegato nella pianta)
@@ -28,8 +28,8 @@ I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 c
 
 
 
-//#define AUDIO_RATE 44100 // Hz   
-#define AUDIO_RATE 16384 // Hz
+#define AUDIO_RATE 44100 // Hz   
+//#define AUDIO_RATE 16384 // Hz
 
 // Definiamo i pin a cui colleghiamo potenziometri 
 #define POT0_PIN A0 
@@ -56,11 +56,11 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 
 
 // funzioni per il map
-const IntMap GEN_map(0,1023,0,50);   // Per STM32 con potenziometri collegati a 3.3V
+const IntMap GEN_map(0,4096,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
 const IntMap MOD_map(0,45,0,50);
-const IntMap SENS_map(0,1023,400,600);
-const IntMap THRES_map(0,1023,10,800);
+const IntMap SENS_map(0,4096,400,600);
+const IntMap THRES_map(0,4096,10,800);
 
 
 
