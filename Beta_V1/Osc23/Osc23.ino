@@ -32,6 +32,7 @@ con un led pilotato in PWM che va a tempo con la modulazione.
 
 #define AUDIO_RATE 44100 // Hz   
 // #define AUDIO_RATE 16384 // Hz
+#define CONTROL_RATE 128 // Hz
 
 // Definiamo i pin a cui colleghiamo potenziometri 
 #define POT0_PIN A0 
@@ -62,7 +63,7 @@ const float note[8] = {La0, Si0, Do1, Re1, Mi1, Fa1, Sol1, La1};
 const IntMap GEN_map(0,4096,0,50);   // Per STM32 con potenziometri collegati a 3.3V
 const IntMap NOTE_map(0,45,0,7);   
 const IntMap MOD_map(0,45,0,50);
-const IntMap CUTOFF_map(0,2500,100,40000);
+const IntMap CUTOFF_map(0,4000,200,40000);
 
 
 //--------------------------------------------Pulsante-------------------------------------------------
@@ -83,6 +84,8 @@ Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc3(SAW2048_DATA); // oscillatore medio b
 //Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc3(TRIANGLE_HERMES_2048_DATA); // oscillatore medio alto
 Oscil <SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> Osc2(SQUARE_NO_ALIAS_2048_DATA);
 int Sum = 0;
+int ON2 = 0;
+int ON3 = 0;
 
 // Array di oscillatori di voci per poterci iterare sopra
 Oscil <2048, AUDIO_RATE> oscillatori[] = {Osc2, Osc3};
@@ -107,7 +110,7 @@ int resonance=0;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(P3_PIN,INPUT);
   pinMode(P2_PIN,INPUT);
   pinMode(LED_PIN,OUTPUT);
@@ -197,10 +200,14 @@ void updateControl() {
 //------------------------------------------------------------------------Filtri------------------------------------------------
   cutoff2 = CUTOFF_map(mozziAnalogRead(POT2_PIN));
   cutoff3 = CUTOFF_map(mozziAnalogRead(POT3_PIN));
-  resonance = 200;
+  if (cutoff2 < 5000) ON2 = 0;
+  else if (cutoff2 > 15000) ON2=1;
+  if (cutoff3 < 5000) ON3 = 0;
+  else if (cutoff3 > 15000) ON3=1;
+  resonance = 1000;
   lpf2.setCutoffFreqAndResonance(cutoff2, resonance);
   lpf3.setCutoffFreqAndResonance(cutoff3, resonance);
-  //Serial.println(cutoff1);
+  Serial.println(cutoff2);
   //Serial.println(cutoff2);
 
 }
@@ -211,16 +218,16 @@ void updateControl() {
 AudioOutput_t updateAudio() {
   Sum=0;
   if (Switch_RM3==true ){
-    Sum +=((lpf3.next(((Carrier3.next()>>9))*Osc3.next())*4 )) ;  // ( ((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*4) + 
+    Sum +=(((lpf3.next(((Carrier3.next()>>9))*Osc3.next())*4 )))*ON3 ;  // ( ((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*4) + 
   }
   else{
-    Sum +=lpf3.next(Osc3.next())*4 ; // (lpf2.next(Osc2.next())*4 + 
+    Sum +=(lpf3.next(Osc3.next())*4)*ON3 ; // (lpf2.next(Osc2.next())*4 + 
   }
   if (Switch_RM2==true ){
-    Sum +=((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*3);  // ( ((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*4) + 
+    Sum +=(((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*3))*ON2;  // ( ((lpf2.next((Carrier2.next()>>9)*Osc2.next()))*4) + 
   }
   else{
-    Sum +=lpf2.next(Osc2.next())*3 ; // (lpf2.next(Osc2.next())*4 + 
+    Sum +=(lpf2.next(Osc2.next())*3)*ON2 ; // (lpf2.next(Osc2.next())*4 + 
   }
   return MonoOutput::fromNBit(13,Sum);
 }
