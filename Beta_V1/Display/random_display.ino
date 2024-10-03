@@ -1,6 +1,6 @@
 /* Codice Arduino per visualizzare il logo politek sul modulo display oled 
    e controllare il modulo display 7 seg 4 digit in modo randomico.
-   Se il pin 13 viene portato a livello alto aumenta la frequenza con cui cambia i numeri */
+   Se i pin 0,1 o 13 vengono portati a livello alto aumenta la frequenza con cui cambia i numeri */
 
 
 #include <Adafruit_GFX.h>
@@ -21,7 +21,9 @@
 #define D3 11
 #define D4 12
 // Pin for input signal
-#define inputPin 13
+#define pianta_1 0
+#define pianta_2 1
+#define pianta_3 13
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
@@ -152,13 +154,23 @@ void setup() {
   pinMode(D4, OUTPUT);  
 
   // initialize the input pin as input
-  pinMode(inputPin, INPUT); 
+  pinMode(pianta_1, INPUT); 
+  pinMode(pianta_2, INPUT);
+  pinMode(pianta_3, INPUT);
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
+  int ON_1 = digitalRead(pianta_1);
+  int ON_2 = digitalRead(pianta_2);
+  int ON_3 = digitalRead(pianta_3);
+
+  char buff[4];
+  sprintf(buff, "%d%d%d", ON_1, ON_2, ON_3);
+  Serial.print(buff);
+
   // Read the input pin
-  if (digitalRead(inputPin) == HIGH) {
+  if (ON_1 == HIGH || ON_2 == HIGH || ON_3 == HIGH ) {
     N=50;
   }
   else N=200;   
