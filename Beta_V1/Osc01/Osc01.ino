@@ -6,7 +6,7 @@ La resonance di entrambi i filtri è costante con un valore calibrato ad orecchi
 
 Distorsione gain clip implementata sulla somma dei due oscillatori
 
-ATTENZIONE! SENORE DISTANZA PER FILTRO OSC1 ESCLUSO VIA SOFTWARE PERCHè DAVA PROBLEMI
+(FIXATO) ATTENZIONE! SENORE DISTANZA PER FILTRO OSC1 ESCLUSO VIA SOFTWARE PERCHè DAVA PROBLEMI
 
 */
 
