@@ -119,14 +119,14 @@ void updateControl() {
 
 //------------------------------------------------------------------------Filtri------------------------------------------------
   cutoff0 = CUTOFF_map(mozziAnalogRead(POT2_PIN));
-  //cutoff1 = CUTOFF_map(A3_map(mozziAnalogRead(POT3_PIN)));
+  cutoff1 = CUTOFF_map(mozziAnalogRead(POT3_PIN));
   if (cutoff0 < 1000) ON0 = 0;
   else if (cutoff0 > 1200) ON0=1;
-  if (cutoff0 < 1000) ON1 = 0;
-  else if (cutoff0 > 1200) ON1=1;
+  if (cutoff1 < 1000) ON1 = 0;
+  else if (cutoff1 > 1200) ON1=1;
   resonance = 2000;
   lpf0.setCutoffFreqAndResonance(cutoff0, resonance);
-  lpf1.setCutoffFreqAndResonance(cutoff0, resonance);
+  lpf1.setCutoffFreqAndResonance(cutoff1, resonance);
   //Serial.println(CUT3_map(cutoff1));
   //Serial.println(cutoff1);
 
