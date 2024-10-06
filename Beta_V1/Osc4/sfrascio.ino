@@ -16,7 +16,8 @@ I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 c
 #include <tables/saw2048_int8.h> 
 #include <tables/square_no_alias_2048_int8.h>
 #include <tables/envelop2048_uint8.h>
-#include <tables/sin2048_int8.h> 
+#include <tables/sin2048_int8.h>
+#include <tables/uphasor256_uint8.h>
 // libreria per map veloce
 #include <IntMap.h> 
 
@@ -40,7 +41,9 @@ I pin digitali 2 e 4 sono usati per leggere la pianta come un pulsante. (pin 2 c
 #define POT3_PIN A3
 #define POT4_PIN A4 //depth
 #define POT5_PIN A5
-#define Display_PIN 1
+#define ONPianta1 8
+#define ONPianta2 10
+#define ONPianta3 11
     
 
 // Definizione note associate a frequenze
@@ -69,7 +72,7 @@ const IntMap THRES_map(0,800,10,1000);
 
 //--------------------------------------------Oscillatori Voci-------------------------------------------
 Oscil <TRIANGLE_HERMES_2048_NUM_CELLS, AUDIO_RATE> Osc4(TRIANGLE_HERMES_2048_DATA);// SUPERCAZZOLA
-Oscil <SQUARE_NO_ALIAS_2048_NUM_CELLS, AUDIO_RATE> Osc5(SQUARE_NO_ALIAS_2048_DATA); 
+Oscil <UPHASOR256_NUM_CELLS, AUDIO_RATE> Osc5(UPHASOR256_DATA); 
 Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> Osc6(SAW2048_DATA); 
 int Sum = 0;
 int ON[3]={0,0,0};
@@ -97,8 +100,10 @@ CapacitiveSensor capSensor3 = CapacitiveSensor(7, 6);
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
   //Serial.begin(1200);
-  pinMode(Display_PIN,OUTPUT);
-  startMozzi(CONTROL_RATE); // :)
+  pinMode(ONPianta1,OUTPUT);
+  pinMode(ONPianta2,OUTPUT);
+  pinMode(ONPianta3,OUTPUT);
+  startMozzi(CONTROL_RATE ); // :)
   
 }
 
@@ -131,11 +136,13 @@ void updateControl() {
       
         if (sensorValue1 > threshold1) {
           ON[0]=1;
-          digitalWrite(Display_PIN,1);
+          digitalWrite(ONPianta1,1);
         }
         else {
-          ON[0]=0;
-          digitalWrite(Display_PIN,0);
+          if (ON[0]) {
+            digitalWrite(ONPianta1,0);
+            ON[0]=0;
+          }
         }
       // valori massimi dell'envelope                                            // .attack levek |      ^              //
       byte attack_level =rand(50) + 50;                                          //               |     / \             //             
@@ -164,11 +171,13 @@ void updateControl() {
       
         if (sensorValue2 > threshold2) {
           ON[1]=1;
-          digitalWrite(Display_PIN,1);
+          digitalWrite(ONPianta2,1);
         }
         else {
-          ON[1]=0;
-          digitalWrite(Display_PIN,0);
+          if (ON[1]) {
+            digitalWrite(ONPianta2,0);
+            ON[1]=0;
+          }
         }
       // valori massimi dell'envelope                                            // .attack levek |      ^              //
       byte attack_level =rand(50) + 50;                                          //               |     / \             //             
@@ -180,7 +189,7 @@ void updateControl() {
       release_ms2 = rand(100) +300; // Rt                                         //                     |  |       |  |  //
       envelope2.setTimes(attack,decay,sustain,release_ms2);                        //                     At Dt     St  Rt//
       envelope2.noteOn();
-      Osc5.setFreq(Nota_Pianta2); 
+      Osc5.setFreq(Nota_Pianta2*0.5f); 
      
       // tempo tra una nota e l'altra deciso rand
       int pianta = rand(50,500);
@@ -197,11 +206,13 @@ void updateControl() {
       
         if (sensorValue3 > threshold3) {
           ON[2]=1;
-          digitalWrite(Display_PIN,1);
+          digitalWrite(ONPianta3,1);
         }
         else {
-          ON[2]=0;
-          digitalWrite(Display_PIN,0);
+          if (ON[2]) {
+            digitalWrite(ONPianta3,0);
+            ON[2]=0;
+          }
         }
       // valori massimi dell'envelope                                            // .attack levek |      ^              //
       byte attack_level =rand(50) + 50;                                          //               |     / \             //             
@@ -213,7 +224,7 @@ void updateControl() {
       release_ms3 = rand(100) +300; // Rt                                         //                     |  |       |  |  //
       envelope3.setTimes(attack,decay,sustain,release_ms3);                        //                     At Dt     St  Rt//
       envelope3.noteOn();
-      Osc6.setFreq(Nota_Pianta3); 
+      Osc6.setFreq(Nota_Pianta3*0.25f); 
      
       // tempo tra una nota e l'altra deciso rand
       int pianta = rand(50,500);
