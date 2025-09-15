@@ -12,4 +12,4 @@ The user interface consist in:
 
 Tavolo was the first project of PoliteK. It was Imagined as an interactive instrument for events and installations.
 
-Entirely Programmed via the mozzi Library on STM32-F401RE using Arduino Arduino's C++.
+Entirely Programmed via the mozzi Library on STM32-F401RE using Arduino's C++.
